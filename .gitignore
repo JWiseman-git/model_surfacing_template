@@ -7,6 +7,14 @@ reports/
 artifacts
 .idea/
 dist/
-requirements.txt
 .python-version
 .ipynb_checkpoints
+
+# specific venv
+.venv
+
+# data
+/data
+
+# Project meta
+INSTRUCTIONS.md

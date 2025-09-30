@@ -18,7 +18,7 @@ Documentation on getting started.
 ### Prerequisites
 
 - Python 3.10
-- Poetry
+- uv
 - Makefile (GNU Make)
 
 ### Commands

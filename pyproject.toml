@@ -1,34 +1,29 @@
-[tool.poetry]
-name = "ml_service"
-version = "0.0.0"
-description = "Barebones ML service"
-authors = []
+[project]
+name = "MCQA"
+version = "0.1.0"
+description = "Application supporting the hosting of the MCQA model"
+authors = ["Jordan Wiseman"]
+contact = "jordanmarkwiseman@gmail.com"
+requires-python = ">=3.10"
 
-
-[[tool.poetry.source]]
-name = "PyPI"
-priority = "primary"
-
-
-[tool.poetry.dependencies]
-python = ">=3.10, <3.11"
-uvicorn = "^0.31.0"
-fastapi = "^0.115.0"
-pydantic-settings = "^2.5.2"
-pydantic = "^2.9.2"
-spacy = "^3.8.2"
-
-
-[tool.poetry.group.dev.dependencies]
-pytest = "8.3.*"
-
-
-[tool.pytest.ini_options]
-python_functions = [
-    "test_*"
+dependencies = [
+    "uvicorn>=0.31.0,<0.32.0",
+    "fastapi>=0.115.0,<0.116.0",
+    "pydantic-settings>=2.5.2,<2.6.0",
+    "pydantic>=2.9.2,<2.10.0",
+    "spacy>=3.8.2,<3.9.0",
+    "torch>=2.8.0",
+    "transformers>=4.56.2",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.*"
+]
 
-[build-system]
-requires = ["poetry>=1.8.2"]
-build-backend = "poetry.core.masonry.api"
+[tool.pytest.ini_options]
+python_functions = ["test_*"]
+#
+#[build-system]
+#requires = ["uv"]
+#build-backend = "uv.build.api"

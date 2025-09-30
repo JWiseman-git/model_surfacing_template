@@ -1,22 +1,22 @@
-.PHONY: install install-main lock test notebooks pull_spacy_corpora
+.PHONY: install install-main lock test notebooks pull_spacy_corpora docker-build
 
 install:
-	poetry install
+	uv pip install
 
 install-main:
-	poetry install --only main
+	uv pip install
 
 lock:
-	poetry lock --no-update
+	uv lock
 
 test:
-	poetry run pytest tests
+	uv run pytest tests
 
-pull-spacy-corpora:
-	poetry run python -m spacy download en_core_web_sm
+pull_spacy_corpora:
+	uv run python -m spacy download en_core_web_sm
 
 notebooks:
-	poetry run jupyter notebook
+	uv run jupyter notebook
 
 docker-build:
 	docker build --progress=plain -t ml_nlp_service:latest -f docker/Dockerfile .

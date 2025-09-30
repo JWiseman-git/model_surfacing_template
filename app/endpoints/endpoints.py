@@ -2,6 +2,7 @@ from typing import Annotated
 from collections import OrderedDict
 
 import spacy
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
