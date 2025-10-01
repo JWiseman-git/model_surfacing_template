@@ -7,7 +7,7 @@ class MCQARequest(BaseModel):
     choices: list[str]
 
 class MCQAResponse(BaseModel):
-    prediction: str
+    prediction: dict
 
 class ChoiceScore(BaseModel):
     choice: str
