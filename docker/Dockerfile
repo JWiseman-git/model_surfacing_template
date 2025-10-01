@@ -1,31 +1,21 @@
 FROM python:3.10-slim
 
-ENV PYTHONUNBUFFERED=1 \
-    POETRY_HOME="/opt/poetry" \
-    POETRY_VIRTUALENVS_IN_PROJECT=true \
-    POETRY_NO_INTERACTION=1 \
-    PYSETUP_PATH="/opt/pysetup" \
-    VENV_PATH="/opt/pysetup/.venv"
+ENV PYTHONUNBUFFERED=1
+ENV PATH="/root/.local/bin:$PATH"
 
-ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y build-essential curl git && \
+    rm -rf /var/lib/apt/lists/*
 
-#
-# Build poetry
-RUN apt-get update
-RUN apt-get install --no-install-recommends -y build-essential
+RUN pip install --no-cache-dir uv
 
-RUN pip install -U --no-cache-dir pip
-ENV POETRY_VERSION=1.8.2
-RUN pip install poetry==${POETRY_VERSION}
+WORKDIR /app
 
-#
-# Install project dependencies
-WORKDIR /project
-COPY ./* ./
-RUN make install
+COPY pyproject.toml uv.lock* ./
+RUN uv sync --locked --no-dev
 
-#
-# This barebones does not currently implement the application
-# set up and launcher
+COPY . .
 
-CMD ["sleep", "120"]
+EXPOSE 8080
+
+CMD ["uv", "run", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
