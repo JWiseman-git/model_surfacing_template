@@ -1,10 +1,17 @@
 import mlflow
 from fastapi import APIRouter, HTTPException
 from app.schemas.schemas import MCQARequest, MCQAResponse, MCQARequestBatch, MCQAResponseBatch
+from app.models.mcqa_model import MCQAModel, MCQAConfig
+from app.settings import settings
 
 ROUTER = APIRouter(prefix="/mcqa", tags=["MCQA"])
 
-mcqa_model = mlflow.pytorch.load_model("models:/MCQAModel_dev/None")
+# This would be enabled when handling loading from a model registry
+# artifact_path = "mlruns/0/<run_id>/artifacts/MCQAModel_local"
+# mcqa_model = mlflow.pytorch.load_model(artifact_path)
+
+config = MCQAConfig(model_directory=settings.model_directory)
+mcqa_model = MCQAModel(config)
 
 @ROUTER.post("/predict", response_model=MCQAResponse)
 def predict(request: MCQARequest):

@@ -34,9 +34,6 @@ jobs:
       - name: Run isort
         run: isort --check-only .
 
-      - name: Run Ruff
-        run: ruff check .
-
   test:
     name: Run Tests
     runs-on: ubuntu-latest

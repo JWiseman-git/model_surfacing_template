@@ -3,9 +3,8 @@
 ![Coveo Logo](docs/graphics/coveo-logo.png "Coveo Logo")
 
 > PROPRIETARY and CONFIDENTIAL, Coveo Solutions Inc.
-> v2.0.0 - Last Edited 2024-10-01.
+> v0.1.0 - Last Edited 2025-10-02.
 
-> Are you looking for the description of the challenge? Refer to [INSTRUCTIONS.md](INSTRUCTIONS.md).
 
 This is a barebones ML project that serves an ML model via an HTTP API. This serves a dummy ML model, which is a basic text chunker.
 
