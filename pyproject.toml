@@ -2,7 +2,6 @@
 name = "MCQA"
 version = "0.1.0"
 description = "Application supporting the hosting of the MCQA model"
-name = "coveo_ml_dev_challenge"
 authors = [
     { name = "Jordan Wiseman", email = "jordanmarkwiseman@gmail.com" }
 ]
