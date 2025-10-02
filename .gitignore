@@ -9,6 +9,7 @@ artifacts
 dist/
 .python-version
 .ipynb_checkpoints
+app/MCQA.egg-info
 
 # specific venv
 .venv

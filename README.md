@@ -1,69 +1,139 @@
-# ML Service
+# Multiple-Choice Question Answering (MCQA) 
+## REST API – Coveo NLP Challenge
 
 ![Coveo Logo](docs/graphics/coveo-logo.png "Coveo Logo")
 
-> PROPRIETARY and CONFIDENTIAL, Coveo Solutions Inc.
-> v0.1.0 - Last Edited 2025-10-02.
+> PROPRIETARY and CONFIDENTIAL, Coveo Solutions Inc. | 
+> **Multiple-Choice Question Answering (MCQA) REST API** | 
+> v0.1.0 - Last Edited 2025-10-02. |
+> Fills in `[BLANK]` in text passages using a pre-trained HuggingFace transformer model.
 
+---
 
-This is a barebones ML project that serves an ML model via an HTTP API. This serves a dummy ML model, which is a basic text chunker.
+## Table of Contents
 
-In the [notebooks](notebooks) directory, a notebook for training a Multiple Choice Question Answering (MCQA) can be found.
+1. [Overview](#overview)  
+2. [Project Structure](#project-structure)  
+3. [Quick Start Guide](#quick-start-guide)  
+4. [Setup & Installation](#setup--installation)  
+5. [Docker Usage](#docker-usage)  
+6. [API Endpoints](#api-endpoints)  
+7. [MLflow Integration](#mlflow-integration)  
+8. [Operational Analysis](#operational-analysis)  
+9. [Design & Future Work](#design--future-work)  
+10. [Best Practices](#best-practices)  
+11. [Mermaid Application Flow Diagram](#mermaid-application-flow-diagram)   
 
-## Quick start
+---
 
-Documentation on getting started.
+## Overview
 
+This project provides a **REST API** to serve a pre-trained MCQA transformer model.  
+
+**Key Features:**  
+- Single and batch inference for MCQA tasks.  
+- `[BLANK]` replacement in text passages with multiple-choice options.  
+- Modular, maintainable Python project structure.  
+- Dockerized for reproducible deployment.  
+- Optional MLflow integration for model tracking and metrics.  
+
+The API is designed for production-ready inference.  
+
+---
+
+## Project Structure
+
+```
+mcqa_api/
+├── app/
+│   ├── main.py                 # API entrypoint
+│   ├── settings.py             # App configuration/settings
+│   ├── endpoints/
+│   │   └── mcqa_endpoints.py   # API entrypoints
+│   ├── models/
+│   │   ├── mcqa_model.py       # Core MCQA model wrapper
+│   │   └── model_loader.py     # MLflow one-time loader util
+│   ├── schemas/
+│   │   └── schemas.py          # Format schemas
+│   └── utils/
+│       └── logger.py           # Logging support
+├── notebooks/                  # Training code
+├── models/                     # Local copy of models
+├── Dockerfile                  # Docker image definition
+├── pyproject.toml              # Project specs (including dependencies)
+├── ANALYSIS.md                 # Operational analysis
+├── DESIGN.md                   # Design rationale & future improvements
+├── README.md
+└── .github                     # Release pipeline 
+└── Makefile                   
+
+```
+
+---
+
+## Quick Start Guide
+
+### **1. Build and run using Makefile**
+
+The Makefile automates environment setup, dependency installation, and API startup.
+
+```bash
+# Create virtual environment and install dependencies
+make setup
+
+# Start API locally
+make run
+```
+
+### 2. Access the API locally
+
+Once the API is running, access it via:
+
+Swagger UI: http://localhost:8000/docs
+
+Single prediction example:
+
+```bash
+curl -X POST "http://localhost:8000/mcqa/predict" \
+-H "Content-Type: application/json" \
+-d '{"text": "The capital of France is [BLANK].", "choices": ["Paris","London","Berlin","Rome"]}'
+```
+Batch prediction example:
+
+```bash
+curl -X POST "http://localhost:8000/mcqa/predict_batch" \
+-H "Content-Type: application/json" \
+-d '[{"text": "The capital of France is [BLANK].", "choices": ["Paris","London","Berlin","Rome"]},
+     {"text": "Water freezes at [BLANK] degrees Celsius.", "choices": ["0","100","50","-10"]}]'
+```
+
+## Setup & Installation
 ### Prerequisites
-
 - Python 3.10
-- uv
-- Makefile (GNU Make)
-
-### Commands
-
-Commands are provided in this project's Makefile:
-
-- `make install` Install project dependencies (via Poetry).
-- `make lock` Update the Poetry lock file.
-- `make test` Run the test suite.
-- `make notebooks` Run a Jupyter environment.
-- `make docker-build`: Build a docker image. TODO: This is currently not a complete dockerfile.
-
-### Structure
-
-```text
-artifacts/           Skeleton structure for artifacts
-    datasets/
-    models/
-docker/              Dockerfile
-docs/                Documentation and graphics
-ml_service/          Python source code
-notebooks/           Jupyter notebooks
-tests/               Python test suite
-Makefile             Runnable commands
-pyproject.toml       Configuration for project tools
-README.md            This read me
-```
-
-### Run the service
-
-Set up:
-
+- [Optional] Docker if you want to run in a container
+### 1. Clone the repository
 ```bash
-make install
-make pull-spacy-corpora
+git clone https://github.com/JWiseman-git/coveo_ml_dev_challenge.git
+cd mcqa_api
 ```
-
-Start the service:
-
+### 2. Create a virtual environment
 ```bash
-export DEVELOPMENT_MODE=true
-poetry run python ml_service/main.py
+python -m venv venv
+source venv/bin/activate   # Linux / Mac
+venv\Scripts\activate      # Windows
 ```
+### 3. Install dependencies via uv from pyproject.toml
+```bash
+# Install uv if not already installed
+pip install uv
 
-Use the service:
+# Install project dependencies
+uv install uv install -e . 
+```
+(This will install all dependencies specified in pyproject.toml in your virtual environment.)
 
-- Visit the index (e.g., via a browser) at: `http://127.0.0.1:8080`
-- Visit the docs at: `http://127.0.0.1:8080/docs`
-- Send a request: `http://127.0.0.1:8080/chunkify?text=Hello%20word.%20Nice%20to%20meet%20again.`
+### 4. Run API locally
+```python -m app.main``` 
+
+
+

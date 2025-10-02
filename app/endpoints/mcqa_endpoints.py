@@ -32,7 +32,12 @@ def predict(request: MCQARequest):
     """
     if len(request.choices) != 4:
         raise HTTPException(status_code=400, detail="Exactly 4 choices required")
-    pred = mcqa_model.predict_blank(request.passage, request.choices)
+
+    with mlflow.start_run(run_name="MCQA_Predict"):
+        pred = mcqa_model.predict_blank(request.passage, request.choices)
+        mlflow.log_metric("predictions", float(pred["confidence"]))
+        mlflow.log_text("predictions", pred["predicted_choice"])
+ # mlflow ui --backend-store-uri file:./mlruns_dev --port 5000
     return MCQAResponse(prediction=pred)
 
 @ROUTER.post("/predict_chunk", response_model=MCQAResponseBatch)
@@ -58,5 +63,9 @@ def predict_chunk(request: MCQARequestBatch):
             detail="Number of passages does not match number of choices lists"
         )
 
-    preds = mcqa_model.predict_batch(request.passages, request.choices_list)
+    with mlflow.start_run(run_name="MCQA_Predict_Chunk"):
+        preds = mcqa_model.predict_batch(request.passages, request.choices_list)
+        mlflow.set_tag("endpoint", "predict_chunk")
+        # mlflow.log_text("predictions", preds["confidence"])
+
     return MCQAResponseBatch(predictions=preds)

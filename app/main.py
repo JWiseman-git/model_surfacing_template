@@ -14,7 +14,7 @@ app = FastAPI(title="MCQA API")
 app.include_router(MCQA_ROUTER)
 
 if __name__ == "__main__":
-    logger.info("Application started on %s:%s", settings.host, settings.port)
+    logger.info(f"Application started on {settings.host}, {settings.port}")
 
     mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
     with mlflow.start_run(run_name=f"MCQA_API_Run_{settings.env}") as run:
