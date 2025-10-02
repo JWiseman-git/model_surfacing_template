@@ -3,7 +3,7 @@ import logging
 import mlflow
 
 from fastapi import FastAPI
-from utils.logger import setup_logging
+from app.utils import setup_logging
 from app.endpoints.mcqa_endpoints import ROUTER as MCQA_ROUTER
 from app.settings import settings
 

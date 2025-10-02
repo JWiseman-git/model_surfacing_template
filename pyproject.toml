@@ -28,3 +28,10 @@ dev = [
 
 [tool.pytest.ini_options]
 python_functions = ["test_*"]
+
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["app"]
