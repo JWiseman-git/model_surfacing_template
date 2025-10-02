@@ -16,5 +16,8 @@ dist/
 # data
 /data
 
+# local mlruns
+mlruns*
+
 # Project meta
 INSTRUCTIONS.md

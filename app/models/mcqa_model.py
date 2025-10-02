@@ -3,62 +3,188 @@ import logging
 import time
 import mlflow
 import mlflow.pytorch
-
-from typing import List, Union, Any, Dict
+from dataclasses import dataclass
+from typing import List, Union, Any, Dict, Optional
 from pathlib import Path
 from transformers import AutoTokenizer, AutoModelForMultipleChoice
 
-
 logger = logging.getLogger(__name__)
+
+class MCQAModelError(Exception):
+    """Base exception for MCQA model errors."""
+    pass
+
+
+class ValidationError(MCQAModelError):
+    """Raised when input validation fails."""
+    pass
+
+
+class PredictionError(MCQAModelError):
+    """Raised when prediction fails."""
+    pass
+
+@dataclass
+class MCQAConfig:
+    """Configuration for MCQA model."""
+    model_directory: Union[Path, str]
+    number_of_choices: int = 4
+    max_length: int = 512
+    device: Optional[str] = None
+    batch_size_limit: int = 32
+    enable_warmup: bool = True
 
 
 class MCQAModel:
     """
     Multiple-choice question answering model using a pre-trained transformer.
+
+    This class provides inference capabilities for fill-in-the-blank style
+    multiple choice questions using transformer models.
+
+    Example:
+       Example:
+            >>> config = MCQAConfig(model_directory="./models/mcqa")
+            >>> model = MCQAModel(config)
+            >>> result = model.predict_blank(
+            ...     "The capital of France is [BLANK].",
+            ...     ["London", "Paris", "Berlin", "Madrid"]
+            ... )
+            >>> print(result["predicted_choice"])
     """
-    def __init__(self, number_of_choices: int = 4, model_directory: Union[Path, str] = Path("./models/mcqa")) -> None:
+    def __init__(self, config: MCQAConfig) -> None:
         """
         Initialise the MCQA model and tokenizer.
 
         Args:
             model_directory (str): Path to the pre-trained model directory.
+
+        Raises:
+            FileNotFoundError: If model directory doesn't exist.
+            MCQAModelError: If model initialization fails.
         """
-        model_path = Path(model_directory).expanduser().resolve()
+        self.config = config
+        model_path = Path(config.model_directory).expanduser().resolve()
         if not model_path.exists():
             raise FileNotFoundError(f"Model directory not found: {model_path}")
 
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.model = AutoModelForMultipleChoice.from_pretrained(model_path)
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device(
+            config.device if config.device else ("cuda" if torch.cuda.is_available() else "cpu")
+        )
         self.model.to(self.device)
         self.model.eval()
 
+        self.max_length = config.max_length
+        self.num_choices = config.number_of_choices
         self.set_token_limit()
-        self.number_of_choices = number_of_choices
+        self.number_of_choices = config.number_of_choices
 
-    def set_token_limit(self, max_length: int = 512) -> None:
+    def set_token_limit(self) -> None:
         """
-        Configure the maximum token length for model inputs.
+        Configure the maximum token length for model inputs depending on the model used.
 
         Args:
             max_length (int): Maximum sequence length (tokens) for input encoding.
-                              Defaults to 512 (standard limit for BERT-based models).
+                (NOTE: Defaults to 512 (standard limit for BERT-based models)).
 
         Raises:
             ValueError: If max_length is non-positive or exceeds model’s configured maximum.
         """
 
         model_max_len = getattr(self.tokenizer, "model_max_length", None)
-        if model_max_len and max_length > model_max_len:
+        if model_max_len and self.max_length > model_max_len:
             logger.warning(
-                f"Requested max_length {max_length} exceeds model's max_length {model_max_len}."
+                f"Requested max_length {self.max_length} exceeds model's max_length {model_max_len}."
             )
             self.max_length = model_max_len
         else:
-            self.max_length = max_length
+            pass
 
         logger.info(f"Token limit set to {self.max_length}")
+
+    @staticmethod
+    def _validate_passage(passage: str) -> None:
+        """
+        Validate a single passage.
+
+        Args:
+            passage: The text to validate.
+
+        Raises:
+            ValidationError: If passage is invalid.
+        """
+        if not isinstance(passage, str):
+            raise ValidationError(f"Passage must be a string, got {type(passage)}")
+
+        if not passage or not passage.strip():
+            raise ValidationError("Passage cannot be empty")
+
+        if "[BLANK]" not in passage:
+            raise ValidationError("Passage must contain [BLANK] placeholder")
+
+    def _validate_choices(self, choices: List[str]) -> None:
+        """
+        Validate a list of choices.
+
+        Args:
+            choices: List of answer choices to validate.
+
+        Raises:
+            ValidationError: If choices are invalid.
+        """
+        if not isinstance(choices, list):
+            raise ValidationError(f"Choices must be a list, got {type(choices)}")
+
+        if len(choices) != self.num_choices:
+            raise ValidationError(
+                f"Expected {self.num_choices} choices, "
+                f"got {len(choices)}"
+            )
+
+        for idx, choice in enumerate(choices):
+            if not isinstance(choice, str):
+                raise ValidationError(
+                    f"Choice {idx} must be a string, got {type(choice)}"
+                )
+            if not choice.strip():
+                raise ValidationError(f"Choice {idx} cannot be empty")
+
+    def _validate_batch_inputs(
+            self,
+            passages: List[str],
+            choices_list: List[List[str]]
+    ) -> None:
+        """
+        Validate batch prediction inputs.
+
+        Args:
+            passages: List of passages to validate.
+            choices_list: List of choice lists to validate.
+
+        Raises:
+            ValidationError: If inputs are invalid.
+        """
+        if len(passages) != len(choices_list):
+            raise ValidationError(
+                f"Number of passages ({len(passages)}) must match "
+                f"number of choice lists ({len(choices_list)})"
+            )
+
+        if len(passages) > self.config.batch_size_limit:
+            raise ValidationError(
+                f"Batch size {len(passages)} exceeds limit "
+                f"{self.config.batch_size_limit}"
+            )
+
+        for idx, (passage, choices) in enumerate(zip(passages, choices_list)):
+            try:
+                self._validate_passage(passage)
+                self._validate_choices(choices)
+            except ValidationError as e:
+                raise ValidationError(f"Invalid input at index {idx}: {e}") from e
 
     def _predict_helper(self, candidate_texts: List[List[str]]) -> List[Dict[str, Any]]:
         """
@@ -71,6 +197,9 @@ class MCQAModel:
 
         Returns:
             List[Dict[str, Any]]: One result per passage with predicted choice & confidence.
+
+        Raises:
+            PredictionError: If prediction fails.
         """
         batch_size = len(candidate_texts)
         num_choices = len(candidate_texts[0])
@@ -91,28 +220,32 @@ class MCQAModel:
             encoding[key] = encoding[key].view(batch_size, num_choices, -1).to(self.device)
 
         try:
-            with torch.no_grad():
+            with torch.inference_mode():
                 outputs = self.model(**encoding)
                 logits = outputs.logits
                 probs = torch.softmax(logits, dim=-1)
                 preds = torch.argmax(probs, dim=-1)
+        except torch.cuda.OutOfMemoryError as e:
+            raise PredictionError(
+                f"GPU out of memory. Try reducing batch size (current: {batch_size})"
+            ) from e
         except Exception as e:
             logger.error(f"Prediction failed: {e}")
-            raise RuntimeError("Prediction failed") from e
+            raise PredictionError(f"Prediction failed: {e}") from e
 
         latency_ms = (time.time() - start_time) * 1000
-        mlflow.log_metric("latency_ms", latency_ms)
+        mlflow.log_metric("mcqa/latency_ms", latency_ms)
 
         results = []
         for i in range(batch_size):
-            best_choice = candidate_texts[i][preds[i].item()]
-            confidence = probs[i][preds[i]].item()
+            pred_idx = preds[i].item()
+            best_choice = candidate_texts[i][pred_idx]
+            confidence = probs[i][pred_idx].item()
             results.append({
                 "predicted_choice": best_choice,
-                "confidence": confidence,
-                "latency_ms": latency_ms
+                "confidence": confidence
             })
-            mlflow.log_metric(f"confidence_{i}", confidence)
+            mlflow.log_metric(f"mcqa/confidence_{i}", confidence)
 
         return results
 
@@ -132,9 +265,8 @@ class MCQAModel:
         Raises:
             ValueError: If the number of choices is not exactly 4.
         """
-        if len(choices) != self.number_of_choices:
-            logger.error(f"Number of choices is not exactly {self.number_of_choices}: {len(choices)}")
-            raise ValueError(f"Exactly {self.number_of_choices} choices are required.")
+        self._validate_choices(choices)
+        self._validate_passage(passage)
 
         candidate_texts = [[passage.replace("[BLANK]", choice) for choice in choices]]
 
@@ -156,14 +288,8 @@ class MCQAModel:
         Raises:
             ValueError: If lengths mismatch or number of choices != 4 per passage.
         """
-        if len(passages) != len(choices_list):
-            logger.error("Number of passages does not match number of choices lists.")
-            raise ValueError("passages and choices lists must have the same length")
 
-        for idx, choices in enumerate(choices_list):
-            if len(choices) != self.number_of_choices:
-                logger.error(f"Passage {idx} does not have exactly 4 choices: {choices}")
-                raise ValueError("Each passage must have exactly 4 choices")
+        self._validate_batch_inputs(passages, choices_list)
 
         logger.info(f"Predicting for batch of size: {len(passages)}")
 
