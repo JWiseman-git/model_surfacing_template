@@ -1,14 +1,10 @@
-from functools import lru_cache
-
 from pydantic_settings import BaseSettings
 
+class Settings(BaseSettings):
+    host: str = "127.0.0.1"
+    port: int = 8080
+    env: str = "dev"
+    mlflow_tracking_uri: str = "file:./mlruns_dev"
+    model_directory: str = "./models/mcqa"
 
-class AppSettings(BaseSettings):
-    HOST: str = "127.0.0.1"
-    PORT: int = 8080
-    DEVELOPMENT_MODE: bool = False
-
-
-@lru_cache
-def get_settings() -> AppSettings:
-    return AppSettings()
+settings = Settings()

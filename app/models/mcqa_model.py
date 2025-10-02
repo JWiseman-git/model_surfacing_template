@@ -33,35 +33,9 @@ class MCQAModel:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.model.eval()
-        self._log_model_params()
+
         self.set_token_limit()
         self.number_of_choices = number_of_choices
-
-    def _log_model_params(self):
-        """Log model parameters to MLflow.
-        Parameters logged:
-            - model_name (str): The class name of the model (e.g., 'BertForMultipleChoice').
-            - tokenizer_name (str): The class name of the tokenizer (e.g., 'BertTokenizer').
-            - vocab_size (int): The size of the tokenizer's vocabulary.
-
-        Notes:
-            - An active MLflow run must exist when calling this method; otherwise,
-            mlflow.log_param will raise an error."""
-
-        mlflow.log_param("model_name", self.model.__class__.__name__)
-        mlflow.log_param("tokenizer_name", self.tokenizer.__class__.__name__)
-        mlflow.log_param("vocab_size", self.tokenizer.vocab_size)
-
-    def log_model(self, artifact_path="mcqa_model"):
-        """
-        Save and log the model to MLflow.
-        """
-        mlflow.pytorch.log_model(
-            pytorch_model=self.model,
-            artifact_path=artifact_path,
-            registered_model_name="MCQAModel"
-        )
-        logger.info(f"Model logged to MLflow under artifact path: {artifact_path}")
 
     def set_token_limit(self, max_length: int = 512) -> None:
         """

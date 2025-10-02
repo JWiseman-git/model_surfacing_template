@@ -1,10 +1,10 @@
+import mlflow
 from fastapi import APIRouter, HTTPException
-from app.schemas import MCQARequest, MCQAResponse, ChoiceScore, MCQAResponseScores
-from app.model import MCQAModel
+from app.schemas.schemas import MCQARequest, MCQAResponse, MCQARequestBatch, MCQAResponseBatch
 
 ROUTER = APIRouter(prefix="/mcqa", tags=["MCQA"])
 
-mcqa_model = MCQAModel()
+mcqa_model = mlflow.pytorch.load_model("models:/MCQAModel_dev/None")
 
 @ROUTER.post("/predict", response_model=MCQAResponse)
 def predict(request: MCQARequest):
@@ -28,3 +28,28 @@ def predict(request: MCQARequest):
     pred = mcqa_model.predict_blank(request.passage, request.choices)
     return MCQAResponse(prediction=pred)
 
+@ROUTER.post("/predict_chunk", response_model=MCQAResponseBatch)
+def predict_chunk(request: MCQARequestBatch):
+    """
+    This endpoint expects multiple passages, each with exactly four answer choices.
+    It uses the MCQA model to select the most likely correct choice for each chunk.
+
+    Parameters:
+    - request (MCQARequestBatch): Input data containing:
+        - passages (List[str]): List of text chunks containing [BLANK] placeholders.
+        - choices_list (List[List[str]]): List of 4-choice lists, one per passage.
+
+    Returns:
+    - MCQAResponseBatch: The model's predicted answers for each chunk.
+
+    Raises:
+    - HTTPException: If lengths mismatch or choices per chunk are not exactly 4.
+    """
+    if len(request.passages) != len(request.choices_list):
+        raise HTTPException(
+            status_code=400,
+            detail="Number of passages does not match number of choices lists"
+        )
+
+    preds = mcqa_model.predict_batch(request.passages, request.choices_list)
+    return MCQAResponseBatch(predictions=preds)
