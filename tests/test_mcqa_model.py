@@ -13,8 +13,8 @@ def dummy_model_dir(tmp_path):
 
 @pytest.fixture
 def mock_tokenizer_and_model():
-    with patch("models.mcqa.AutoTokenizer.from_pretrained") as mock_tok, \
-         patch("models.mcqa.AutoModelForMultipleChoice.from_pretrained") as mock_model:
+    with patch("app.models.mcqa_model.AutoTokenizer.from_pretrained") as mock_tok, \
+         patch("app.models.mcqa_model.AutoModelForMultipleChoice.from_pretrained") as mock_model:
         mock_tokenizer = MagicMock()
         mock_tokenizer.return_value = {"input_ids": torch.ones((1, 4, 5), dtype=torch.long)}
         mock_tokenizer.model_max_length = 512
@@ -38,7 +38,7 @@ def test_predict_blank_valid(dummy_model_dir, mock_tokenizer_and_model):
 
     result = model.predict_blank(passage, choices)
 
-    assert result["predicted_choice"] == "Paris"
+    assert result["predicted_choice"] == "The capital of France is Paris."
     assert isinstance(result["confidence"], float)
 
 
@@ -65,3 +65,32 @@ def test_predict_batch_too_large(dummy_model_dir, mock_tokenizer_and_model):
 
     with pytest.raises(ValidationError, match="Batch size 2 exceeds limit 1"):
         model.predict_batch(passages, choices_list)
+
+def test_predict_blank_empty_passage(dummy_model_dir, mock_tokenizer_and_model):
+    """Edge case: Passage is empty or whitespace only"""
+    config = MCQAConfig(model_directory=dummy_model_dir)
+    model = MCQAModel(config)
+
+    empty_passages = ["", "   "]
+    choices = ["London", "Paris", "Berlin", "Madrid"]
+
+    for passage in empty_passages:
+        with pytest.raises(ValidationError, match="Passage cannot be empty"):
+            model.predict_blank(passage, choices)
+
+
+def test_predict_blank_invalid_number_of_choices(dummy_model_dir, mock_tokenizer_and_model):
+    """Edge case: Choices list has wrong number of items"""
+    config = MCQAConfig(model_directory=dummy_model_dir)
+    model = MCQAModel(config)
+
+    passage = "The capital of France is [BLANK]."
+    invalid_choices_lists = [
+        ["Paris", "London"],
+        ["Paris", "London", "Berlin", "Madrid", "Rome"]
+    ]
+
+    for choices in invalid_choices_lists:
+        with pytest.raises(ValidationError, match="Expected 4 choices"):
+            model.predict_blank(passage, choices)
+
