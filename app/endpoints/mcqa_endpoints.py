@@ -6,7 +6,7 @@ from app.settings import settings
 
 ROUTER = APIRouter(prefix="/mcqa", tags=["MCQA"])
 
-# This would be enabled when handling loading from a model registry
+# Todo: This would be enabled when handling loading from a model registry
 # artifact_path = "mlruns/0/<run_id>/artifacts/MCQAModel_local"
 # mcqa_model = mlflow.pytorch.load_model(artifact_path)
 
@@ -37,7 +37,6 @@ def predict(request: MCQARequest):
         pred = mcqa_model.predict_blank(request.passage, request.choices)
         mlflow.log_metric("predictions", float(pred["confidence"]))
         mlflow.log_text("predictions", pred["predicted_choice"])
- # mlflow ui --backend-store-uri file:./mlruns_dev --port 5000
     return MCQAResponse(prediction=pred)
 
 @ROUTER.post("/predict_chunk", response_model=MCQAResponseBatch)

@@ -61,7 +61,6 @@ class MCQAModel:
 
         Raises:
             FileNotFoundError: If model directory doesn't exist.
-            MCQAModelError: If model initialization fails.
         """
         self.config = config
         model_path = Path(config.model_directory).expanduser().resolve()
@@ -89,9 +88,6 @@ class MCQAModel:
         Args:
             max_length (int): Maximum sequence length (tokens) for input encoding.
                 (NOTE: Defaults to 512 (standard limit for BERT-based models)).
-
-        Raises:
-            ValueError: If max_length is non-positive or exceeds model’s configured maximum.
         """
 
         model_max_len = getattr(self.tokenizer, "model_max_length", None)
@@ -261,9 +257,6 @@ class MCQAModel:
             dict: Each item contains:
             - "predicted_choice": str
             - "confidence": float
-
-        Raises:
-            ValueError: If the number of choices is not exactly 4.
         """
         self._validate_choices(choices)
         self._validate_passage(passage)
@@ -284,9 +277,6 @@ class MCQAModel:
             dict: Each item contains:
             - "predicted_choice": str
             - "confidence": float
-
-        Raises:
-            ValueError: If lengths mismatch or number of choices != 4 per passage.
         """
 
         self._validate_batch_inputs(passages, choices_list)

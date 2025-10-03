@@ -14,9 +14,12 @@ WORKDIR /app
 
 COPY pyproject.toml uv.lock* ./
 
-RUN uv sync --locked --no-dev
+COPY app ./app
 
-COPY docker .
+# Temporary addition - once the package is added to separate registry, this is removed
+COPY app ./models
+
+RUN uv sync --locked --no-dev
 
 # Create local directory for MLflow runs
 RUN mkdir -p /mlruns
@@ -25,3 +28,4 @@ EXPOSE 8080
 EXPOSE 5000
 
 CMD ["uv", "run", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+

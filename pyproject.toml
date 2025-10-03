@@ -21,11 +21,6 @@ dependencies = [
     "mock>=5.2.0",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest==8.3.*"
-]
-
 [tool.pytest.ini_options]
 python_functions = ["test_*"]
 
