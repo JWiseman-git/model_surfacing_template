@@ -214,6 +214,9 @@ mlflow ui --backend-store-uri file:./mlruns_dev --port 5000
 ---
 
 # Application Flow Diagram
+
+Below is a basic flow diagram for how a client might interact with the service. 
+
 ```mermaid
 flowchart TD
     A[Client Request] --> B[API Endpoint]
