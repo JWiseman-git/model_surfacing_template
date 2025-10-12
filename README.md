@@ -112,7 +112,7 @@ curl -X POST "http://localhost:8000/mcqa/predict_batch" \
 - [Optional] Docker / Docker Desktop if you want to run in a container locally
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/JWiseman-git/coveo_ml_dev_challenge.git
+git clone https://github.com/JWiseman-git/model_surfacing_template.git
 cd mcqa_api
 ```
 
