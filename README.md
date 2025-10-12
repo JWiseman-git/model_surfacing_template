@@ -1,9 +1,5 @@
 # Multiple-Choice Question Answering (MCQA) 
-## REST API – Coveo NLP Challenge
 
-![Coveo Logo](docs/graphics/coveo-logo.png "Coveo Logo")
-
-> PROPRIETARY and CONFIDENTIAL, Coveo Solutions Inc. | 
 > **Multiple-Choice Question Answering (MCQA) REST API** | 
 > v0.1.0 - Last Edited 2025-10-02. |
 > Fills in `[BLANK]` in text passages using a pre-trained HuggingFace transformer model.
@@ -237,9 +233,6 @@ flowchart TD
 - Document endpoints with Swagger.
 
 ---
-
-# License
-Proprietary – Coveo Solutions Inc.
 
 # Contact 
 Email: jordanmarkwiseman@gmail.com 
