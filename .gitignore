@@ -11,9 +11,6 @@ dist/
 .ipynb_checkpoints
 app/MCQA.egg-info
 
-# specific venv
-.venv
-
 # data
 /data
 

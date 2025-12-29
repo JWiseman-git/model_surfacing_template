@@ -16,12 +16,9 @@ app.include_router(MCQA_ROUTER)
 if __name__ == "__main__":
     logger.info(f"Application started on {settings.host}, {settings.port}")
 
-    mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
-    with mlflow.start_run(run_name=f"MCQA_API_Run_{settings.env}") as run:
-        logger.info(f"MLflow run started: {run.info.run_id}")
-        uvicorn.run(
-            "app.main:app",
-            host=settings.host,
-            port=settings.port,
-            reload=settings.env == "dev"
-        )
+    uvicorn.run(
+        "app.main:app",
+        host=settings.host,
+        port=settings.port,
+        reload=settings.env == "dev"
+    )

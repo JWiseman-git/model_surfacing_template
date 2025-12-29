@@ -1,8 +1,6 @@
 import torch
 import logging
 import time
-import mlflow
-import mlflow.pytorch
 from dataclasses import dataclass
 from typing import List, Union, Any, Dict, Optional
 from pathlib import Path
@@ -230,7 +228,6 @@ class MCQAModel:
             raise PredictionError(f"Prediction failed: {e}") from e
 
         latency_ms = (time.time() - start_time) * 1000
-        mlflow.log_metric("mcqa/latency_ms", latency_ms)
 
         results = []
         for i in range(batch_size):
@@ -241,7 +238,6 @@ class MCQAModel:
                 "predicted_choice": best_choice,
                 "confidence": confidence
             })
-            mlflow.log_metric(f"mcqa/confidence_{i}", confidence)
 
         return results
 

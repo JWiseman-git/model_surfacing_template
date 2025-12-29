@@ -1,14 +1,10 @@
-import mlflow
+
 from fastapi import APIRouter, HTTPException
 from app.schemas.schemas import MCQARequest, MCQAResponse, MCQARequestBatch, MCQAResponseBatch
 from app.models.mcqa_model import MCQAModel, MCQAConfig
 from app.settings import settings
 
 ROUTER = APIRouter(prefix="/mcqa", tags=["MCQA"])
-
-# Todo: This would be enabled when handling loading from a model registry
-# artifact_path = "mlruns/0/<run_id>/artifacts/MCQAModel_local"
-# mcqa_model = mlflow.pytorch.load_model(artifact_path)
 
 config = MCQAConfig(model_directory=settings.model_directory)
 mcqa_model = MCQAModel(config)
@@ -33,10 +29,7 @@ def predict(request: MCQARequest):
     if len(request.choices) != 4:
         raise HTTPException(status_code=400, detail="Exactly 4 choices required")
 
-    with mlflow.start_run(run_name="MCQA_Predict"):
-        pred = mcqa_model.predict_blank(request.passage, request.choices)
-        mlflow.log_metric("predictions", float(pred["confidence"]))
-        mlflow.log_text("predictions", pred["predicted_choice"])
+    pred = mcqa_model.predict_blank(request.passage, request.choices)
     return MCQAResponse(prediction=pred)
 
 @ROUTER.post("/predict_chunk", response_model=MCQAResponseBatch)
@@ -62,9 +55,6 @@ def predict_chunk(request: MCQARequestBatch):
             detail="Number of passages does not match number of choices lists"
         )
 
-    with mlflow.start_run(run_name="MCQA_Predict_Chunk"):
-        preds = mcqa_model.predict_batch(request.passages, request.choices_list)
-        mlflow.set_tag("endpoint", "predict_chunk")
-        # mlflow.log_text("predictions", preds["confidence"])
-
+    preds = mcqa_model.predict_batch(request.passages, request.choices_list)
+    
     return MCQAResponseBatch(predictions=preds)
